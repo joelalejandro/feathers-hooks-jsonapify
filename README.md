@@ -36,3 +36,16 @@ app.hooks({
   }
 });
 ```
+
+## TODOs
+
+Check out the [issues](https://github.com/joelalejandro/feathers-hooks-jsonapify/issues).
+
+## Feel like contributing?
+
+Knock yourself out! [Fork](https://github.com/joelalejandro/feathers-hooks-jsonapify/edit/master/README.md#fork-destination-box) the repo and make a PR.
+
+## Licence
+
+MIT
+
