@@ -7,6 +7,8 @@ Simply run `npm install --save feathers-hooks-jsonapify` and you're good to go!
 
 ## Usage
 
+> **Important:** As of version 0.1.0, this hook is intended to use with Sequelize. Further versions will move the coupling code to hook configurations.
+
 Require the hook:
 
 ```js
