@@ -1,0 +1,24 @@
+{
+  "name": "feathers-hooks-jsonapify",
+  "version": "0.0.0",
+  "description": "Feathers hook for outputting data in a JSON-API-compliant way. Edit",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joelalejandro/feathers-hooks-jsonapify.git"
+  },
+  "keywords": [
+    "feathers",
+    "hook",
+    "json-api"
+  ],
+  "author": "Joel A. Villarreal Bertoldi <joel.a.villarreal@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/joelalejandro/feathers-hooks-jsonapify/issues"
+  },
+  "homepage": "https://github.com/joelalejandro/feathers-hooks-jsonapify#readme",
+  "dependencies": {
+    "jsonapi-serializer": "^3.5.2"
+  }
+}
