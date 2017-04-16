@@ -40,12 +40,24 @@ function byPrimaryKey(model) {
  * @return {Object}
  */
 function createRelationshipObject(include, item) {
-  const relatedItem = {};
-  const relatedModelIdAttribute = Object.keys(include.model.attributes).filter(byPrimaryKey(include.model))[0];
-  const foreignKeyValue = item[include.association.options.foreignKey];
-  relatedItem.type = include.model.name;
-  relatedItem[relatedModelIdAttribute] = foreignKeyValue;
-  return foreignKeyValue !== null ? relatedItem : null;
+  const relatedModelIdAttribute = include.association.sourceIdentifier; //Object.keys(include.model.attributes).filter(byPrimaryKey(include.model))[0];
+  const associationValue = item[include.as];
+  if (Array.isArray(associationValue)) {
+    const results = [];
+    associationValue.forEach(function(record) {
+      const relatedItem = {};
+      relatedItem.type = include.model.name;
+      relatedItem[relatedModelIdAttribute] = record[relatedModelIdAttribute];
+      results.push(relatedItem);
+    });
+    return results;
+  } else if (typeof associationValue === 'object') {
+    const relatedItem = {};
+    relatedItem.type = include.model.name;
+    relatedItem[relatedModelIdAttribute] = associationValue[relatedModelIdAttribute];
+    return relatedItem;
+  }
+  return null;
 }
 
 /**
@@ -62,10 +74,16 @@ function parseRelationships(data, includedData) {
     relationship[relationshipName] = { data: createRelationshipObject(include, data) };
     if (data[include.as] !== null) {
       const serializedRelationship = jsonapify(data[include.as], include.model, include.model.name + '/' + data[include.as].id, { include: [] });
-      includedData.push(Object.assign({}, serializedRelationship.document, { links: serializedRelationship.links }));
-      delete data[include.as][include.association.options.foreignKey];
+      if (Array.isArray(serializedRelationship.document)) {
+        Array.prototype.push.apply(includedData, [...serializedRelationship.document.map(function(item) {
+          return Object.assign(item, { links: { self: '/' + include.model.name + '/' + item.id }});
+        })]);
+      } else {
+        includedData.push(Object.assign({}, serializedRelationship.document, { links: serializedRelationship.links }));
+      }
+      delete data[include.as][include.association.foreignKey];
     }
-    delete data[include.association.options.foreignKey];
+    delete data[include.association.foreignKey];
     delete data[include.as];
     if (relationship[relationshipName].data !== null) {
       data.relationships = Object.assign({}, data.relationships, relationship);
@@ -125,7 +143,7 @@ function jsonapify(data, model, selfUrl, context) {
     attributes: attributes
   });
 
-  if (json.data.attributes.relationships) {
+  if (json.data.attributes && json.data.attributes.relationships) {
     json.data.relationships = json.data.attributes.relationships;
     delete json.data.attributes.relationships;
   }

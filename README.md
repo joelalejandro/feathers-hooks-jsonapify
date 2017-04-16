@@ -45,6 +45,8 @@ app.hooks({
 
 `feathers-hooks-jsonapify` will automatically detect metadata for relationships in the model. It'll create an `included` top-level array in the document when the hook is called via `find`.
 
+> Currently working and tested with `belongsTo` and `hasMany` associations.
+
 #### Example document for a self-referencing model
 
 ```json
