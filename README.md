@@ -1,6 +1,9 @@
 # feathers-hooks-jsonapify
 Feathers hook for outputting data in a JSON-API-compliant way.
 
+[![npm version](https://badge.fury.io/js/feathers-hooks-jsonapify.svg)](https://www.npmjs.com/package/feathers-hooks-jsonapify)
+[![dependency status](https://david-dm.org/joelalejandro/feathers-hooks-jsonapify.svg)](https://david-dm.org/joelalejandro/feathers-hooks-jsonapify)
+
 ## Installing
 
 Simply run `npm install --save feathers-hooks-jsonapify` and you're good to go!
