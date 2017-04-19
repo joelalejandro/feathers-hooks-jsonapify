@@ -1,6 +1,6 @@
 {
   "name": "feathers-hooks-jsonapify",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Feathers hook for outputting data in a JSON-API-compliant way.",
   "main": "index.js",
   "repository": {
