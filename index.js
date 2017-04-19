@@ -40,9 +40,9 @@ function byPrimaryKey(model) {
  * @return {Object}
  */
 function createRelationshipObject(include, item) {
-  const relatedModelIdAttribute = include.association.sourceIdentifier; //Object.keys(include.model.attributes).filter(byPrimaryKey(include.model))[0];
+  const relatedModelIdAttribute = include.association.targetKey;
   const associationValue = item[include.as];
-  if (Array.isArray(associationValue)) {
+  if (associationValue && Array.isArray(associationValue)) {
     const results = [];
     associationValue.forEach(function(record) {
       const relatedItem = {};
@@ -51,7 +51,7 @@ function createRelationshipObject(include, item) {
       results.push(relatedItem);
     });
     return results;
-  } else if (typeof associationValue === 'object') {
+  } else if (associationValue && typeof associationValue === 'object') {
     const relatedItem = {};
     relatedItem.type = include.model.name;
     relatedItem[relatedModelIdAttribute] = associationValue[relatedModelIdAttribute];
