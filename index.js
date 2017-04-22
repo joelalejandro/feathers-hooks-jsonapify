@@ -1,5 +1,47 @@
 'use strict';
 const JSONAPISerializer = require('jsonapi-serializer').Serializer;
+const crypto = require('crypto');
+
+/**
+ * Converts a string to the `dasherized-key` format.
+ *
+ * @private
+ * @function dasherize
+ * @param {String} str - String to convert.
+ * @return {String}
+ */
+function dasherize(str) {
+  let newStr = str.substr(0, 1).toLowerCase() + str.substr(1);
+  newStr = newStr.replace(/([A-Z])/g, '-$1').toLowerCase();
+  return newStr;
+}
+
+/**
+ * Creates a unique ID for a given object, using a SHA-256 hash.
+ *
+ * @private
+ * @function generateFauxId
+ * @param {Object} data
+ * @return {String}
+ */
+function generateFauxId(data) {
+  const hash = crypto.createHash('sha256');
+  hash.update(JSON.stringify(data));
+  return hash.digest('hex');
+}
+
+/**
+ * Checks if Sequelize objects are available. If they're not, `serializePlainObject`
+ * will be used to serialize the result. No relationships will be available.
+ *
+ * @private
+ * @function mustParseAsSequelize
+ * @param {Hook} hook
+ * @return {Boolean}
+ */
+function mustParseAsSequelize(hook) {
+  return hook.service.Model && hook.result.$options;
+}
 
 /**
  * Creates a filter helper to check if a given attribute name must be excluded or not.
@@ -204,33 +246,85 @@ function createPagination(hook) {
 }
 
 /**
+ * Converts a plain Object instance into a JSON-API-compliant object.
+ *
+ * @private
+ * @function serializePlainObject
+ * @param {Object} item
+ * @param {Object} options
+ * @param {Hook} hook
+ * @return {Object}
+ */
+function serializePlainObject(item, options, hook) {
+  const newItem = {};
+
+  if (options.identifierKey) {
+    newItem.id = item[options.identifierKey];
+  } else {
+    newItem.id = generateFauxId(item);
+  }
+  if (options.typeKey) {
+    newItem.type = item[options.typeKey];
+  } else {
+    newItem.type = hook.service.options.name;
+  }
+
+  newItem.attributes = {};
+  Object.keys(item).filter(function(key) {
+    return key !== options.identifierKey && key !== options.typeKey;
+  }).forEach(function(key) {
+    newItem.attributes[dasherize(key)] = item[key];
+  });
+
+  newItem.links = {
+    self: '/' + hook.path + '/' + newItem.id
+  };
+
+  return newItem;
+}
+
+/**
  * Creates a JSON API document with multiple records.
  *
  * @private
  * @method jsonapifyViaFind
  * @param {Hook} hook
  */
-function jsonapifyViaFind(hook) {
+function jsonapifyViaFind(hook, options) {
   let serialized = {};
-  hook.result.included = [];
-  hook.result.data.forEach(function(data, index) {
-    const jsonItem = data.toJSON();
-    serialized = jsonapify(jsonItem, hook.service.Model, hook.path + '/' + jsonItem.id, data.$options);
-    hook.result.data[index] = serialized.document;
-    if (serialized.related) {
-      hook.result.included = hook.result.included.concat(serialized.related);
+  if (mustParseAsSequelize(hook)) {
+    hook.result.included = [];
+    hook.result.data.forEach(function(data, index) {
+      const jsonItem = data.toJSON();
+      serialized = jsonapify(jsonItem, hook.service.Model, hook.path + '/' + jsonItem.id, data.$options);
+      hook.result.data[index] = serialized.document;
+      if (serialized.related) {
+        hook.result.included = hook.result.included.concat(serialized.related);
+      }
+      if (serialized.links) {
+        hook.result.data[index].links = serialized.links;
+        createPagination(hook);
+      }
+    });
+    if (!hook.result.included.length) {
+      delete hook.result.included;
+    } else {
+      hook.result.included = removeDuplicateRecords(hook.result.included);
     }
-    if (serialized.links) {
-      hook.result.data[index].links = serialized.links;
-      createPagination(hook);
-    }
-  });
-  if (!hook.result.included.length) {
-    delete hook.result.included;
+    createMetadata(hook);
   } else {
-    hook.result.included = removeDuplicateRecords(hook.result.included);
+    const newResult = {};
+    if (Array.isArray(hook.result) && hook.result.length > 1) {
+      newResult.data = hook.result.map(function(item) {
+        return serializePlainObject(item, options, hook);
+      });
+    } else if (!Array.isArray(hook.result) && Object.keys(hook.result).length) {
+      newResult.data = [serializePlainObject(hook.result, options, hook)];
+    } else {
+      newResult.data = [];
+    }
+    hook.result = newResult;
   }
-  createMetadata(hook);
 }
 
 /**
@@ -240,19 +334,23 @@ function jsonapifyViaFind(hook) {
  * @method jsonapifyViaGet
  * @param {Hook} hook
  */
-function jsonapifyViaGet(hook) {
+function jsonapifyViaGet(hook, options) {
   let serialized = {};
-  const jsonItem = hook.result.toJSON();
-  serialized = jsonapify(jsonItem, hook.service.Model, hook.path + '/' + jsonItem.id, hook.result.$options);
-  hook.result = { data: serialized.document, included: serialized.related };
-  if (hook.result.included && !hook.result.included.length) {
-    delete hook.result.included;
+  if (mustParseAsSequelize(hook)) {
+    const jsonItem = hook.result.toJSON();
+    serialized = jsonapify(jsonItem, hook.service.Model, hook.path + '/' + jsonItem.id, hook.result.$options);
+    hook.result = { data: serialized.document, included: serialized.related };
+    if (hook.result.included && !hook.result.included.length) {
+      delete hook.result.included;
+    }
+    if (serialized.links) {
+      hook.result.data.links = serialized.links;
+      hook.result.data.links.parent = '/' + hook.service.Model.name;
+    }
+    createMetadata(hook);
+  } else {
+    hook.result.data = serializePlainObject(hook.result, options, hook);
   }
-  if (serialized.links) {
-    hook.result.data.links = serialized.links;
-    hook.result.data.links.parent = '/' + hook.service.Model.name;
-  }
-  createMetadata(hook);
 }
 
 /**
@@ -268,11 +366,17 @@ const entrypoints = { find: jsonapifyViaFind, get: jsonapifyViaGet };
  * It is used as an `after` hook. Bindable with `find` and `get` hooks.
  *
  * @function jsonapify
+ * @param {Object} options - Define settings for the JSONAPIficiation process.
+ *                 Available options:
+ *                 - identifierKey: (String) Used by `serializePlainObject` to determine
+ *                   which key will be used as `id`.
+ *                 - typeKey: (String) Used by `serializePlainObject` to determine
+ *                   which key will be used as `type`.
  */
 module.exports = function (options = {}) { // eslint-disable-line no-unused-vars
   return function (hook) {
     if (hook.method === 'find' || hook.method === 'get') {
-      entrypoints[hook.method](hook);
+      entrypoints[hook.method](hook, options);
     }
     return Promise.resolve(hook);
   };
