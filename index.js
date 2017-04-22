@@ -40,7 +40,7 @@ function generateFauxId(data) {
  * @return {Boolean}
  */
 function mustParseAsSequelize(hook) {
-  return hook.service.Model && hook.result.$options;
+  return hook.service.Model;
 }
 
 /**
