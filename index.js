@@ -213,7 +213,7 @@ function createMetadata(hook) {
   if (metaKeys.length) {
     const meta = {};
     metaKeys.forEach(function(key) {
-      meta[key] = hook.result[key];
+      meta[dasherize(key)] = hook.result[key];
       delete hook.result[key];
     });
     hook.result.meta = meta;
