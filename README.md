@@ -1,6 +1,8 @@
 # feathers-hooks-jsonapify
 Feathers hook for outputting data in a JSON-API-compliant way.
 
+_Currently works great with **Sequelize** as an adapter. There are plans to support more adapters in the future._
+
 [![npm version](https://badge.fury.io/js/feathers-hooks-jsonapify.svg)](https://www.npmjs.com/package/feathers-hooks-jsonapify)
 [![dependency status](https://david-dm.org/joelalejandro/feathers-hooks-jsonapify.svg)](https://david-dm.org/joelalejandro/feathers-hooks-jsonapify)
 
