@@ -295,7 +295,7 @@ function jsonapifyViaFind(hook, options) {
   if (mustParseAsSequelize(hook)) {
     hook.result.included = [];
     hook.result.data.forEach(function(data, index) {
-      const jsonItem = JSON.stringify(data);
+      const jsonItem = data;
       serialized = jsonapify(jsonItem, hook.service.Model, hook.path + '/' + jsonItem.id, data.$options);
       hook.result.data[index] = serialized.document;
       if (serialized.related) {
@@ -337,7 +337,7 @@ function jsonapifyViaFind(hook, options) {
 function jsonapifyViaGet(hook, options) {
   let serialized = {};
   if (mustParseAsSequelize(hook)) {
-    const jsonItem = JSON.stringify(hook.result);
+    const jsonItem = hook.result;
     serialized = jsonapify(jsonItem, hook.service.Model, hook.path + '/' + jsonItem.id, hook.result.$options);
     hook.result = { data: serialized.document, included: serialized.related };
     if (hook.result.included && !hook.result.included.length) {
