@@ -172,7 +172,7 @@ function jsonapify(data, model, selfUrl, context) {
   const idAttribute = Object.keys(model.attributes).filter(byPrimaryKey(model))[0];
   const excluded = [idAttribute];
 
-  if (context.include && context.include.length) {
+  if (context && context.include && context.include.length) {
     context.include.forEach(parseRelationships(data, includedData, model, selfUrl));
   }
 
