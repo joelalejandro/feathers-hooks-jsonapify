@@ -172,7 +172,7 @@ function jsonapify(data, model, selfUrl, context) {
   const idAttribute = Object.keys(model.attributes).filter(byPrimaryKey(model))[0];
   const excluded = [idAttribute];
 
-  if (context.include && context.include.length) {
+  if (context && context.include && context.include.length) {
     context.include.forEach(parseRelationships(data, includedData, model, selfUrl));
   }
 
@@ -295,7 +295,7 @@ function jsonapifyViaFind(hook, options) {
   if (mustParseAsSequelize(hook)) {
     hook.result.included = [];
     hook.result.data.forEach(function(data, index) {
-      const jsonItem = data.toJSON();
+      const jsonItem = data;
       serialized = jsonapify(jsonItem, hook.service.Model, hook.path + '/' + jsonItem.id, data.$options);
       hook.result.data[index] = serialized.document;
       if (serialized.related) {
@@ -337,7 +337,7 @@ function jsonapifyViaFind(hook, options) {
 function jsonapifyViaGet(hook, options) {
   let serialized = {};
   if (mustParseAsSequelize(hook)) {
-    const jsonItem = hook.result.toJSON();
+    const jsonItem = hook.result;
     serialized = jsonapify(jsonItem, hook.service.Model, hook.path + '/' + jsonItem.id, hook.result.$options);
     hook.result = { data: serialized.document, included: serialized.related };
     if (hook.result.included && !hook.result.included.length) {
