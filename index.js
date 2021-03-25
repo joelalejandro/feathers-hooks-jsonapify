@@ -169,6 +169,10 @@ function removeDuplicateRecords(collection) {
  */
 function jsonapify(data, model, selfUrl, context) {
   const includedData = [];
+  if (model.attributes === undefined) {
+    model.attributes = model.rawAttributes;
+  }
+
   const idAttribute = Object.keys(model.attributes).filter(byPrimaryKey(model))[0];
   const excluded = [idAttribute];
 
